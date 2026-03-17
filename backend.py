@@ -1,18 +1,25 @@
 import os
+import streamlit as st
 from datetime import datetime
-from dotenv import load_dotenv
 import google.generativeai as genai
 from supabase import create_client, Client
 
-load_dotenv()
+# ── Secrets — Streamlit Cloud + Local dono handle ──
+try:
+    SUPABASE_URL   = st.secrets["supabase"]["url"]
+    SUPABASE_KEY   = st.secrets["supabase"]["key"]
+    GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+except:
+    # Local ke liye .env fallback
+    from dotenv import load_dotenv
+    load_dotenv()
+    SUPABASE_URL   = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY   = os.getenv("SUPABASE_KEY")
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# ── API Keys ──────────────────────────────────────────
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-SUPABASE_URL   = os.getenv("SUPABASE_URL")
-SUPABASE_KEY   = os.getenv("SUPABASE_KEY")
-
-# ── Supabase Client ───────────────────────────────────
+# ── Clients ──
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+genai.configure(api_key=GOOGLE_API_KEY)
 
 # ── Gemini Setup ──────────────────────────────────────
 genai.configure(api_key=GOOGLE_API_KEY)
