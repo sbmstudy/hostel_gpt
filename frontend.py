@@ -191,7 +191,7 @@ if not st.session_state.logged_in:
          border-top:1px solid #dcfce7;'>
         <p style='font-size:0.78rem; color:#9ca3af;'>
             Built with ❤️ by <strong style='color:#15803d;'>Shreyas</strong>
-            &nbsp;·&nbsp; Powered by Gemini AI
+            &nbsp;·&nbsp; Powered by Curiosity
         </p>
     </div>
     """, unsafe_allow_html=True)
