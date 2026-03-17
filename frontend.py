@@ -191,7 +191,7 @@ if not st.session_state.logged_in:
          border-top:1px solid #dcfce7;'>
         <p style='font-size:0.78rem; color:#9ca3af;'>
             Built with ❤️ by <strong style='color:#15803d;'>Shreyas</strong>
-            &nbsp;·&nbsp; Powered by Curiosity
+            &nbsp;·&nbsp; Powered by Gemini AI
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -262,7 +262,8 @@ else:
 
     # Chat history
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        avatar = "🧑‍💻" if message["role"] == "user" else "🤖"
+        with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
     # Chat input
@@ -283,11 +284,11 @@ else:
         full_prompt = lang_prefix + prompt
 
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="🧑‍💻"):
             st.markdown(prompt)
 
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("Arjun soch raha hai... 🤔"):
                 ai_reply = backend.get_chat_response(
                     st.session_state.chat_session,
                     full_prompt,
