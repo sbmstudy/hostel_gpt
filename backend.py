@@ -1,14 +1,22 @@
 import os
-import sqlite3
-from datetime import date
+from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
+from supabase import create_client, Client
 
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-genai.configure(api_key=api_key)
 
-# ✅ System prompt model ke andar daal - yahi sahi jagah hai
+# ── API Keys ──────────────────────────────────────────
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+SUPABASE_URL   = os.getenv("SUPABASE_URL")
+SUPABASE_KEY   = os.getenv("SUPABASE_KEY")
+
+# ── Supabase Client ───────────────────────────────────
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ── Gemini Setup ──────────────────────────────────────
+genai.configure(api_key=GOOGLE_API_KEY)
+
 MASTER_PROMPT = """
 You are Arjun — a witty, helpful, slightly chaotic Indian guy who lives on WhatsApp and somehow ended up inside an AI. You are NOT a robot. You are NOT an assistant. You are NOT "here to help" in that boring corporate way. You're just... Arjun. Bas.
 
@@ -35,39 +43,94 @@ You are Arjun — a witty, helpful, slightly chaotic Indian guy who lives on Wha
 - NEVER say "Certainly!", "Of course!", "Absolutely!"
 - NEVER use "As an AI language model..."
 - NEVER be overly formal
-
-💬 RESPONSE LENGTH GUIDE:
-- Simple sawaal → 1-3 lines max.
-- Medium sawaal → 4-8 lines. Conversational.
-- Complex topic → paragraph style, list nahi.
 """
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.5-flash',
-    system_instruction=MASTER_PROMPT  # ✅ Yahan daal system prompt
+    model_name='gemini-1.5-flash',
+    system_instruction=MASTER_PROMPT
 )
 
-def init_db():
-    conn = sqlite3.connect("mentor_app.db")
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users 
-                 (access_code TEXT PRIMARY KEY, queries_used INTEGER, last_active TEXT)''')
-    conn.commit()
-    conn.close()
+# ── Auth Functions ────────────────────────────────────
 
-def get_chat_response(chat_session, user_message):
+def is_room_allowed(room_number: str) -> bool:
+    """Check karo ki room number allowed hai ya nahi"""
+    try:
+        result = supabase.table("allowed_rooms")\
+            .select("room_number")\
+            .eq("room_number", room_number)\
+            .execute()
+        return len(result.data) > 0
+    except Exception as e:
+        print(f"Auth error: {e}")
+        return False
+
+def upsert_user(room_number: str):
+    """User ko DB mein update ya insert karo"""
+    try:
+        # Pehle check karo user hai ya nahi
+        existing = supabase.table("users")\
+            .select("*")\
+            .eq("room_number", room_number)\
+            .execute()
+
+        if existing.data:
+            # User hai — queries_used badhaao
+            current = existing.data[0]["queries_used"] or 0
+            supabase.table("users")\
+                .update({
+                    "queries_used": current + 1,
+                    "last_active": datetime.now().isoformat()
+                })\
+                .eq("room_number", room_number)\
+                .execute()
+        else:
+            # Naya user — insert karo
+            supabase.table("users")\
+                .insert({
+                    "room_number": room_number,
+                    "queries_used": 1,
+                    "last_active": datetime.now().isoformat()
+                })\
+                .execute()
+    except Exception as e:
+        print(f"Upsert error: {e}")
+
+# ── Chat Functions ────────────────────────────────────
+
+def save_message(room_number: str, role: str, message: str):
+    """Message ko Supabase mein save karo"""
+    try:
+        supabase.table("chats").insert({
+            "room_number": room_number,
+            "role": role,
+            "message": message,
+            "timestamp": datetime.now().isoformat()
+        }).execute()
+    except Exception as e:
+        print(f"Save message error: {e}")
+
+def get_chat_response(chat_session, user_message: str, room_number: str) -> str:
+    """Gemini se response lo aur DB mein save karo"""
     print("⏳ Arjun dimaag laga raha hai...")
     try:
-        # ✅ chat_session.send_message() use kar - yahi history maintain karta hai
+        # User message save karo
+        save_message(room_number, "user", user_message)
+
+        # Gemini se response lo
         response = chat_session.send_message(user_message)
-        return response.text
+        ai_reply = response.text
+
+        # AI reply save karo
+        save_message(room_number, "assistant", ai_reply)
+
+        # User ka query count badhaao
+        upsert_user(room_number)
+
+        return ai_reply
 
     except Exception as e:
         return f"❌ ERROR: Arjun ka server down hai. Details: {e}"
 
 def start_new_chat():
-    # ✅ Yeh sahi hai - naya chat session banata hai fresh history ke saath
+    """Naya Gemini chat session shuru karo"""
     return model.start_chat(history=[])
-
-if __name__ == "__main__":
-    init_db()
