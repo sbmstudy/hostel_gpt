@@ -17,6 +17,19 @@ st.set_page_config(
     layout="centered"
 )
 
+st.set_page_config(
+    page_title="HostelMind",
+    page_icon="🌿",
+    layout="centered"
+)
+
+# Yeh add karo — force light mode
+st._config.set_option('theme.base', 'light')
+st._config.set_option('theme.primaryColor', '#22c55e')
+st._config.set_option('theme.backgroundColor', '#f0faf4')
+st._config.set_option('theme.secondaryBackgroundColor', '#ffffff')
+st._config.set_option('theme.textColor', '#1a1a1a')
+
 # ── CSS ───────────────────────────────────────────────
 st.markdown("""
 <style>
