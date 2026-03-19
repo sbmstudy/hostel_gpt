@@ -25,32 +25,7 @@ st.markdown("""
 * { font-family: 'Plus Jakarta Sans', sans-serif !important; }
 
 
-/* Light mode — dark text */
-@media (prefers-color-scheme: light) {
-    [data-testid="stChatMessage"] * {
-        color: #1a1a1a !important;
-    }
-    .stMarkdown * {
-        color: #1a1a1a !important;
-    }
-}
 
-/* Dark mode — white text */
-@media (prefers-color-scheme: dark) {
-    [data-testid="stAppViewContainer"] {
-        background: #0f0f0f !important;
-    }
-    [data-testid="stChatMessage"] {
-        background: #1e1e1e !important;
-        border-color: #2a2a2a !important;
-    }
-    [data-testid="stChatMessage"] * {
-        color: #f0f0f0 !important;
-    }
-    .stMarkdown * {
-        color: #f0f0f0 !important;
-    }
-}
 
 /* Background */
 [data-testid="stAppViewContainer"] {
