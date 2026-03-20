@@ -4,7 +4,6 @@ from datetime import datetime
 import google.generativeai as genai
 from supabase import create_client, Client
 
-# ── Secrets — Streamlit Cloud + Local dono handle ──
 try:
     SUPABASE_URL   = st.secrets["supabase"]["url"]
     SUPABASE_KEY   = st.secrets["supabase"]["key"]
@@ -20,8 +19,6 @@ except:
 # ── Clients ──
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 genai.configure(api_key=GOOGLE_API_KEY)
-
-# ── Gemini Setup ──────────────────────────────────────
 genai.configure(api_key=GOOGLE_API_KEY)
 
 MASTER_PROMPT = """
@@ -72,16 +69,13 @@ def is_room_allowed(room_number: str) -> bool:
         return False
 
 def upsert_user(room_number: str):
-    """User ko DB mein update ya insert karo"""
     try:
-        # Pehle check karo user hai ya nahi
         existing = supabase.table("users")\
             .select("*")\
             .eq("room_number", room_number)\
             .execute()
 
         if existing.data:
-            # User hai — queries_used badhaao
             current = existing.data[0]["queries_used"] or 0
             supabase.table("users")\
                 .update({
@@ -91,7 +85,6 @@ def upsert_user(room_number: str):
                 .eq("room_number", room_number)\
                 .execute()
         else:
-            # Naya user — insert karo
             supabase.table("users")\
                 .insert({
                     "room_number": room_number,
@@ -105,7 +98,6 @@ def upsert_user(room_number: str):
 # ── Chat Functions ────────────────────────────────────
 
 def save_message(room_number: str, role: str, message: str):
-    """Message ko Supabase mein save karo"""
     try:
         supabase.table("chats").insert({
             "room_number": room_number,
@@ -117,20 +109,14 @@ def save_message(room_number: str, role: str, message: str):
         print(f"Save message error: {e}")
 
 def get_chat_response(chat_session, user_message: str, room_number: str) -> str:
-    """Gemini se response lo aur DB mein save karo"""
     print("⏳ Arjun dimaag laga raha hai...")
     try:
-        # User message save karo
         save_message(room_number, "user", user_message)
-
-        # Gemini se response lo
         response = chat_session.send_message(user_message)
         ai_reply = response.text
-
-        # AI reply save karo
+        
         save_message(room_number, "assistant", ai_reply)
 
-        # User ka query count badhaao
         upsert_user(room_number)
 
         return ai_reply
@@ -139,5 +125,4 @@ def get_chat_response(chat_session, user_message: str, room_number: str) -> str:
         return f"❌ ERROR: Arjun ka server down hai. Details: {e}"
 
 def start_new_chat():
-    """Naya Gemini chat session shuru karo"""
     return model.start_chat(history=[])
