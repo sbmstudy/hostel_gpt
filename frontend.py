@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import backend
 
-# ── Secrets Setup ─────────────────────────────────────
 try:
     os.environ["SUPABASE_URL"]   = st.secrets["supabase"]["url"]
     os.environ["SUPABASE_KEY"]   = st.secrets["supabase"]["key"]
@@ -10,7 +9,6 @@ try:
 except:
     pass
 
-# ── Page Config ───────────────────────────────────────
 st.set_page_config(
     page_title="HostelMind",
     page_icon="🌿",
@@ -23,7 +21,6 @@ st.set_page_config(
     layout="centered"
 )
 
-# Yeh add karo — force light mode
 st._config.set_option('theme.base', 'light')
 st._config.set_option('theme.primaryColor', '#22c55e')
 st._config.set_option('theme.backgroundColor', '#f0faf4')
